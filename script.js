@@ -78,6 +78,11 @@ function verificarLetra() {
     if (letra && !letrasErradas.includes(letra) && !letrasCorretas.includes(letra)) {
         if (palavraEscolhida.includes(letra)) {
             letrasCorretas.push(letra);
+
+            // Atualiza a palavra exibida
+            palavraExibida = palavraEscolhida.split("").map(function(caractere) {
+                return letrasCorretas.includes(caractere) ? caractere : "_";
+            }).join("");
             atualizarPalavra();
         } else {
             letrasErradas.push(letra);
@@ -86,10 +91,12 @@ function verificarLetra() {
             desenharForca();
         }
 
+        // Verifica se o jogador venceu
         if (palavraExibida === palavraEscolhida) {
             document.getElementById("mensagem").textContent = "Você venceu!";
             document.getElementById("mensagem").style.color = "green";
         } else if (tentativas === 0) {
+            // Verifica se o jogador perdeu
             document.getElementById("mensagem").textContent = `Você perdeu! A palavra era: ${palavraEscolhida}`;
         }
     }
