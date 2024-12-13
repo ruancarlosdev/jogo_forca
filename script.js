@@ -1,106 +1,88 @@
-// Lista de palavras para o jogo
-const palavras = ["javascript", "html", "css", "forca", "programacao", "desenvolvimento"];
-let palavraEscolhida = "";
-let palavraExibida = "";
-let tentativas = 6;
-let letrasErradas = [];
-let letrasCorretas = [];
+import getWord from "./words.js";
 
-// Função para escolher a palavra aleatória
-function escolherPalavra() {
-    const indice = Math.floor(Math.random() * palavras.length);
-    palavraEscolhida = palavras[indice];
-    palavraExibida = "_".repeat(palavraEscolhida.length);
-    letrasErradas = [];
-    letrasCorretas = [];
-    tentativas = 6;
-    document.getElementById("tentativas").textContent = `Tentativas restantes: ${tentativas}`;
-    document.getElementById("mensagem").textContent = "";
-    desenharForca();
-    atualizarPalavra();
+const contentBtns = document.querySelector(".btns");
+const contentGuessWord = document.querySelector(".guess-word");
+const img = document.querySelector("img");
+const contentClue = document.querySelector(".clue");
+const btnNew = document.querySelector(".new");
+btnNew.onclick = () => init();
+let indexImg;
+
+init();
+
+function init() {
+  indexImg = 1;
+  img.src = `img1.png`;
+
+  generateGuessSection();
+  generateButtons();
 }
 
-// Função para desenhar o boneco da forca
-function desenharForca() {
-    const canvas = document.getElementById("forca");
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpar o canvas antes de desenhar
-    ctx.strokeStyle = "#000";
+function generateGuessSection() {
+  contentGuessWord.textContent = "";
 
-    if (tentativas <= 5) { // Cabeça
-        ctx.beginPath();
-        ctx.arc(100, 50, 20, 0, Math.PI * 2, true);
-        ctx.stroke();
-    }
-    if (tentativas <= 4) { // Corpo
-        ctx.beginPath();
-        ctx.moveTo(100, 70);
-        ctx.lineTo(100, 120);
-        ctx.stroke();
-    }
-    if (tentativas <= 3) { // Braço esquerdo
-        ctx.beginPath();
-        ctx.moveTo(100, 80);
-        ctx.lineTo(60, 100);
-        ctx.stroke();
-    }
-    if (tentativas <= 2) { // Braço direito
-        ctx.beginPath();
-        ctx.moveTo(100, 80);
-        ctx.lineTo(140, 100);
-        ctx.stroke();
-    }
-    if (tentativas <= 1) { // Perna esquerda
-        ctx.beginPath();
-        ctx.moveTo(100, 120);
-        ctx.lineTo(60, 140);
-        ctx.stroke();
-    }
-    if (tentativas <= 0) { // Perna direita
-        ctx.beginPath();
-        ctx.moveTo(100, 120);
-        ctx.lineTo(140, 140);
-        ctx.stroke();
-    }
+  const { word, clue } = getWord();
+  const wordWithoutAccent = word
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  Array.from(wordWithoutAccent).forEach((letter) => {
+    const span = document.createElement("span");
+
+    span.textContent = "_";
+    span.setAttribute("word", letter.toUpperCase());
+    contentGuessWord.appendChild(span);
+  });
+
+  contentClue.textContent = `Dica: ${clue}`;
 }
 
-// Função para atualizar a palavra exibida
-function atualizarPalavra() {
-    const palavraDiv = document.getElementById("palavra");
-    palavraDiv.textContent = palavraExibida.split("").join(" ");
+function wrongAnswer() {
+  indexImg++;
+  img.src = `img${indexImg}.png`;
+
+  if (indexImg === 7) {
+    setTimeout(() => {
+      alert("Perdeu :/");
+      init();
+    }, 100);
+  }
 }
 
-// Função para verificar a letra digitada
-function verificarLetra() {
-    const letra = document.getElementById("letra").value.toLowerCase();
-    document.getElementById("letra").value = ""; // Limpa o campo de entrada
+function verifyLetter(letter) {
+  const arr = document.querySelectorAll(`[word="${letter}"]`);
 
-    if (letra && !letrasErradas.includes(letra) && !letrasCorretas.includes(letra)) {
-        if (palavraEscolhida.includes(letra)) {
-            letrasCorretas.push(letra);
+  if (!arr.length) wrongAnswer();
 
-            // Atualiza a palavra exibida
-            palavraExibida = palavraEscolhida.split("").map(function(caractere) {
-                return letrasCorretas.includes(caractere) ? caractere : "_";
-            }).join("");
-            atualizarPalavra();
-        } else {
-            letrasErradas.push(letra);
-            tentativas--;
-            document.getElementById("tentativas").textContent = `Tentativas restantes: ${tentativas}`;
-            desenharForca();
-        }
+  arr.forEach((e) => {
+    e.textContent = letter;
+  });
 
-        // Verifica se o jogador venceu
-        if (palavraExibida === palavraEscolhida) {
-            document.getElementById("mensagem").textContent = "Você venceu!";
-            document.getElementById("mensagem").style.color = "green";
-        } else if (tentativas === 0) {
-            // Verifica se o jogador perdeu
-            document.getElementById("mensagem").textContent = `Você perdeu! A palavra era: ${palavraEscolhida}`;
-        }
-    }
+  const spans = document.querySelectorAll(`.guess-word span`);
+  const won = !Array.from(spans).find((span) => span.textContent === "_");
+
+  if (won) {
+    setTimeout(() => {
+      alert("Ganhou!!!");
+      init();
+    }, 100);
+  }
 }
 
-// Função para iniciar o jogo
-escolherPalavra();
+function generateButtons() {
+  contentBtns.textContent = "";
+
+  for (let i = 97; i < 123; i++) {
+    const btn = document.createElement("button");
+    const letter = String.fromCharCode(i).toUpperCase();
+    btn.textContent = letter;
+
+    btn.onclick = () => {
+      btn.disabled = true;
+      btn.style.backgroundColor = "gray";
+      verifyLetter(letter);
+    };
+
+    contentBtns.appendChild(btn);
+  }
+}
